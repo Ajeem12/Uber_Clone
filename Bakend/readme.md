@@ -98,4 +98,92 @@ HTTP/1.1 400 Bad Request
 
 ---
 
-If you'd like, I can also add automated integration tests for this endpoint (using supertest/mocha or jest). 🔧
+## Login — Endpoint ✅
+
+### Endpoint
+
+**POST** `/users/login`
+
+### Description
+
+Authenticate an existing user and return an authentication token (JWT).
+
+---
+
+### Headers
+
+- `Content-Type: application/json`
+
+### Request Body (JSON)
+
+- `email` (string, required, valid email)
+- `password` (string, required, min 6 chars)
+
+Example:
+
+```json
+{
+  "email": "john@example.com",
+  "password": "securePassword123"
+}
+```
+
+---
+
+### Validation Rules & Responses
+
+- **200 OK** ✅ — Successful authentication
+
+  - Response body: `{ "user": { ...publicUserFields }, "token": "<jwt>" }`
+  - Note: Password should NOT be returned in the response. Make sure the controller excludes the password field before sending the user object.
+
+- **400 Bad Request** ⚠️ — Validation failed
+
+  - Response body: `{ "errors": [ { "msg": "...", "param": "...", "location": "body" }, ... ] }`
+
+- **401 Unauthorized** ⚠️ — Invalid credentials
+
+  - Response body: `{ "message": "Invalid email or password" }`
+
+- **500 Internal Server Error** ❌ — Server/database error
+  - Response body: `{ "error": "Internal server error" }` (or similar)
+
+---
+
+## Example cURL (Login)
+
+```bash
+curl -X POST http://localhost:3000/users/login \
+  -H "Content-Type: application/json" \
+  -d '{ "email": "john@example.com", "password": "securePassword123" }'
+```
+
+---
+
+## Example Success Response (Login)
+
+```json
+HTTP/1.1 200 OK
+{
+  "user": {
+    "_id": "64a...",
+    "fullname": { "firstname": "John", "lastname": "Doe" },
+    "email": "john@example.com",
+    "socketId": null
+  },
+  "token": "<jwt-token>"
+}
+```
+
+## Example Invalid Credentials Response
+
+```json
+HTTP/1.1 401 Unauthorized
+{
+  "message": "Invalid email or password"
+}
+```
+
+---
+
+If you'd like, I can also add automated integration tests for these endpoints (using supertest/mocha or jest). 🔧

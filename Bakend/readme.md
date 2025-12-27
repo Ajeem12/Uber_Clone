@@ -186,4 +186,111 @@ HTTP/1.1 401 Unauthorized
 
 ---
 
+## Profile — Endpoint ✅
+
+### Endpoint
+
+**GET** `/users/profile`
+
+### Description
+
+Retrieve the authenticated user's profile information.
+
+---
+
+### Headers
+
+- `Authorization: Bearer <jwt>`
+
+### Validation Rules & Responses
+
+- **200 OK** ✅ — Successful retrieval
+
+  - Response body: `{ "user": { ...publicUserFields } }`
+
+- **401 Unauthorized** ⚠️ — Missing or invalid token
+
+  - Response body: `{ "message": "Unauthorized" }`
+
+- **500 Internal Server Error** ❌ — Server/database error
+  - Response body: `{ "error": "Internal server error" }` (or similar)
+
+---
+
+## Example cURL (Profile)
+
+```bash
+curl -X GET http://localhost:3000/users/profile \
+  -H "Authorization: Bearer <jwt>"
+```
+
+---
+
+## Example Success Response (Profile)
+
+```json
+HTTP/1.1 200 OK
+{
+  "user": {
+    "_id": "64a...",
+    "fullname": { "firstname": "John", "lastname": "Doe" },
+    "email": "john@example.com",
+    "socketId": null
+  }
+}
+```
+
+---
+
+## Logout — Endpoint ✅
+
+### Endpoint
+
+**GET** `/users/logout`
+
+### Description
+
+Log out the authenticated user by blacklisting their JWT token.
+
+---
+
+### Headers
+
+- `Authorization: Bearer <jwt>`
+
+### Validation Rules & Responses
+
+- **200 OK** ✅ — Successful logout
+
+  - Response body: `{ "message": "Logout successful" }`
+
+- **401 Unauthorized** ⚠️ — Missing or invalid token
+
+  - Response body: `{ "message": "Unauthorized" }`
+
+- **500 Internal Server Error** ❌ — Server/database error
+  - Response body: `{ "error": "Internal server error" }` (or similar)
+
+---
+
+## Example cURL (Logout)
+
+```bash
+curl -X GET http://localhost:3000/users/logout \
+  -H "Authorization: Bearer <jwt>"
+```
+
+---
+
+## Example Success Response (Logout)
+
+```json
+HTTP/1.1 200 OK
+{
+  "message": "Logout successful"
+}
+```
+
+---
+
 If you'd like, I can also add automated integration tests for these endpoints (using supertest/mocha or jest). 🔧

@@ -417,4 +417,146 @@ HTTP/1.1 400 Bad Request
 
 ---
 
-If you'd like, I can also add documentation for additional captain endpoints (login, profile, location updates, status toggles) once those controllers/routes are implemented, or I can add automated integration tests for the register endpoint (using supertest/jest). 🔧
+## Login — Endpoint ✅
+
+### Endpoint
+
+**POST** `/captains/login`
+
+### Description
+
+Authenticate an existing captain and return an authentication token (JWT). On success the token is returned in the response body and also set as an HTTP cookie named `token`.
+
+---
+
+### Headers
+
+- `Content-Type: application/json`
+
+### Request Body (JSON)
+
+- `email` (string, required, valid email)
+- `password` (string, required, min 6 chars)
+
+Example:
+
+```json
+{
+  "email": "jane@example.com",
+  "password": "StrongPass123"
+}
+```
+
+---
+
+### Validation Rules & Responses
+
+- **200 OK** ✅ — Successful authentication
+
+  - Response body: `{ "captain": { ...publicCaptainFields }, "token": "<jwt>" }`
+  - Note: The controller sets a `token` cookie in addition to returning the token in the response body. Password should **not** be returned in the response.
+
+- **400 Bad Request** ⚠️ — Validation failed
+
+  - Response body: `{ "errors": [ { "msg": "...", "param": "...", "location": "body" }, ... ] }`
+
+- **401 Unauthorized** ⚠️ — Invalid credentials
+
+  - Response body: `{ "message": "Invalid email or password" }`
+
+- **500 Internal Server Error** ❌ — Server/database error
+  - Response body: `{ "error": "Internal server error" }` (or similar)
+
+---
+
+### Example cURL (Login)
+
+```bash
+curl -X POST http://localhost:3000/captains/login \
+  -H "Content-Type: application/json" \
+  -d '{ "email": "jane@example.com", "password": "StrongPass123" }'
+```
+
+---
+
+## Profile — Endpoint ✅
+
+### Endpoint
+
+**GET** `/captains/profile`
+
+### Description
+
+Retrieve the authenticated captain's profile information.
+
+---
+
+### Headers
+
+- `Authorization: Bearer <jwt>` **or** send cookie `token` returned by login
+
+### Validation Rules & Responses
+
+- **200 OK** ✅ — Successful retrieval
+
+  - Response body: `{ "captain": { ...publicCaptainFields } }`
+
+- **401 Unauthorized** ⚠️ — Missing, invalid or blacklisted token
+
+  - Response body: `{ "message": "Unauthorized" }`
+
+- **500 Internal Server Error** ❌ — Server/database error
+  - Response body: `{ "error": "Internal server error" }` (or similar)
+
+---
+
+### Example cURL (Profile)
+
+```bash
+curl -X GET http://localhost:3000/captains/profile \
+  -H "Authorization: Bearer <jwt>"
+```
+
+---
+
+## Logout — Endpoint ✅
+
+### Endpoint
+
+**GET** `/captains/logout`
+
+### Description
+
+Log out the authenticated captain by blacklisting their JWT token and clearing the `token` cookie. The endpoint accepts the token via an `Authorization: Bearer <jwt>` header or the `token` cookie.
+
+---
+
+### Headers
+
+- `Authorization: Bearer <jwt>` **or** send cookie `token`
+
+### Validation Rules & Responses
+
+- **200 OK** ✅ — Successful logout
+
+  - Response body: `{ "message": "Logout successful" }`
+
+- **401 Unauthorized** ⚠️ — Missing, invalid or blacklisted token
+
+  - Response body: `{ "message": "Unauthorized" }`
+
+- **500 Internal Server Error** ❌ — Server/database error
+  - Response body: `{ "error": "Internal server error" }` (or similar)
+
+---
+
+### Example cURL (Logout)
+
+```bash
+curl -X GET http://localhost:3000/captains/logout \
+  -H "Authorization: Bearer <jwt>"
+```
+
+---
+
+If you'd like, I can also add automated integration tests for the captains endpoints (using supertest/jest) or expand docs for additional captain features (location updates, status toggles). 🔧

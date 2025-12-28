@@ -1,28 +1,39 @@
-# Users — Register Endpoint ✅
+# Backend API Reference 🚀
 
-## Endpoint
+This document covers the `users` and `captains` authentication endpoints used by the backend server. It includes example requests and responses, validation rules, and quick cURL snippets.
 
-**POST** `/users/register`
+## Table of Contents
 
-## Description
-
-Create a new user account and return an authentication token (JWT).
+- **Users**
+  - Register — `POST /users/register`
+  - Login — `POST /users/login`
+  - Profile — `GET /users/profile`
+  - Logout — `GET /users/logout`
+- **Captains**
+  - Register — `POST /captains/register`
+  - Login — `POST /captains/login`
+  - Profile — `GET /captains/profile`
+  - Logout — `GET /captains/logout`
 
 ---
 
-## Headers
+## Users
+
+### Register — `POST /users/register`
+
+Create a new user and return a JWT token.
+
+Required headers:
 
 - `Content-Type: application/json`
 
-## Request Body (JSON)
+Request body (JSON):
 
-- `fullname` (object)
-  - `firstname` (string, required, min 3 chars)
-  - `lastname` (string, optional, min 3 chars)
-- `email` (string, required, valid email)
-- `password` (string, required, min 6 chars)
+- `fullname`: object with `firstname` (required, min 3) and optional `lastname` (min 3)
+- `email`: valid email
+- `password`: string (min 6)
 
-Example:
+Example request body:
 
 ```json
 {
@@ -32,47 +43,9 @@ Example:
 }
 ```
 
----
-
-## Validation Rules & Responses
-
-- **201 Created** ✅ — Successful registration
-
-  - Response body: `{ "user": { ...publicUserFields }, "token": "<jwt>" }`
-  - Note: Password is not returned in the response (stored hashed).
-
-- **400 Bad Request** ⚠️ — Validation failed
-
-  - Response body: `{ "errors": [ { "msg": "...", "param": "...", "location": "body" }, ... ] }`
-  - Examples of validation errors: invalid email, `fullname.firstname` too short, password too short.
-
-- **500 Internal Server Error** ❌ — Server/database error
-  - Response body: `{ "error": "Internal server error" }` (or similar)
-
----
-
-## Notes
-
-- The route is registered as `/register` in `user.route.js` and typically mounted as `/users`, resulting in `/users/register`.
-- A JWT is generated using `process.env.JWT_SECRET_KEY` — ensure this environment variable is set in your environment.
-- Validation is handled with `express-validator` in `user.route.js` — see that file for exact checks.
-
----
-
-## Example cURL
-
-```bash
-curl -X POST http://localhost:3000/users/register \
-  -H "Content-Type: application/json" \
-  -d '{ "fullname": { "firstname": "John", "lastname": "Doe" }, "email": "john@example.com", "password": "securePassword123" }'
-```
-
----
-
-## Example Success Response
+Success (201):
 
 ```json
-HTTP/1.1 201 Created
 {
   "user": {
     "_id": "64a...",
@@ -84,156 +57,33 @@ HTTP/1.1 201 Created
 }
 ```
 
-## Example Validation Error Response
+---
+
+### Login — `POST /users/login`
+
+Authenticate and return JWT.
+
+Request body:
 
 ```json
-HTTP/1.1 400 Bad Request
-{
-  "errors": [
-    { "msg": "Invalid email address", "param": "email", "location": "body" },
-    { "msg": "Firstname must be at least 3 characters long", "param": "fullname.firstname", "location": "body" }
-  ]
-}
+{ "email": "john@example.com", "password": "securePassword123" }
 ```
 
----
-
-## Login — Endpoint ✅
-
-### Endpoint
-
-**POST** `/users/login`
-
-### Description
-
-Authenticate an existing user and return an authentication token (JWT).
+Success (200): `{ "user": {...}, "token": "<jwt>" }`
 
 ---
 
-### Headers
+### Profile — `GET /users/profile`
 
-- `Content-Type: application/json`
+Requires `Authorization: Bearer <jwt>` header.
 
-### Request Body (JSON)
-
-- `email` (string, required, valid email)
-- `password` (string, required, min 6 chars)
-
-Example:
+Success (200):
 
 ```json
-{
-  "email": "john@example.com",
-  "password": "securePassword123"
-}
-```
-
----
-
-### Validation Rules & Responses
-
-- **200 OK** ✅ — Successful authentication
-
-  - Response body: `{ "user": { ...publicUserFields }, "token": "<jwt>" }`
-  - Note: Password should NOT be returned in the response. Make sure the controller excludes the password field before sending the user object.
-
-- **400 Bad Request** ⚠️ — Validation failed
-
-  - Response body: `{ "errors": [ { "msg": "...", "param": "...", "location": "body" }, ... ] }`
-
-- **401 Unauthorized** ⚠️ — Invalid credentials
-
-  - Response body: `{ "message": "Invalid email or password" }`
-
-- **500 Internal Server Error** ❌ — Server/database error
-  - Response body: `{ "error": "Internal server error" }` (or similar)
-
----
-
-## Example cURL (Login)
-
-```bash
-curl -X POST http://localhost:3000/users/login \
-  -H "Content-Type: application/json" \
-  -d '{ "email": "john@example.com", "password": "securePassword123" }'
-```
-
----
-
-## Example Success Response (Login)
-
-```json
-HTTP/1.1 200 OK
 {
   "user": {
     "_id": "64a...",
-    "fullname": { "firstname": "John", "lastname": "Doe" },
-    "email": "john@example.com",
-    "socketId": null
-  },
-  "token": "<jwt-token>"
-}
-```
-
-## Example Invalid Credentials Response
-
-```json
-HTTP/1.1 401 Unauthorized
-{
-  "message": "Invalid email or password"
-}
-```
-
----
-
-## Profile — Endpoint ✅
-
-### Endpoint
-
-**GET** `/users/profile`
-
-### Description
-
-Retrieve the authenticated user's profile information.
-
----
-
-### Headers
-
-- `Authorization: Bearer <jwt>`
-
-### Validation Rules & Responses
-
-- **200 OK** ✅ — Successful retrieval
-
-  - Response body: `{ "user": { ...publicUserFields } }`
-
-- **401 Unauthorized** ⚠️ — Missing or invalid token
-
-  - Response body: `{ "message": "Unauthorized" }`
-
-- **500 Internal Server Error** ❌ — Server/database error
-  - Response body: `{ "error": "Internal server error" }` (or similar)
-
----
-
-## Example cURL (Profile)
-
-```bash
-curl -X GET http://localhost:3000/users/profile \
-  -H "Authorization: Bearer <jwt>"
-```
-
----
-
-## Example Success Response (Profile)
-
-```json
-HTTP/1.1 200 OK
-{
-  "user": {
-    "_id": "64a...",
-    "fullname": { "firstname": "John", "lastname": "Doe" },
+    "fullname": { "firstname": "John" },
     "email": "john@example.com",
     "socketId": null
   }
@@ -242,153 +92,32 @@ HTTP/1.1 200 OK
 
 ---
 
-## Logout — Endpoint ✅
+### Logout — `GET /users/logout`
 
-### Endpoint
-
-**GET** `/users/logout`
-
-### Description
-
-Log out the authenticated user by blacklisting their JWT token.
-
----
-
-### Headers
-
-- `Authorization: Bearer <jwt>`
-
-### Validation Rules & Responses
-
-- **200 OK** ✅ — Successful logout
-
-  - Response body: `{ "message": "Logout successful" }`
-
-- **401 Unauthorized** ⚠️ — Missing or invalid token
-
-  - Response body: `{ "message": "Unauthorized" }`
-
-- **500 Internal Server Error** ❌ — Server/database error
-  - Response body: `{ "error": "Internal server error" }` (or similar)
-
----
-
-## Example cURL (Logout)
-
-```bash
-curl -X GET http://localhost:3000/users/logout \
-  -H "Authorization: Bearer <jwt>"
-```
-
----
-
-## Example Success Response (Logout)
+Blacklists token and returns:
 
 ```json
-HTTP/1.1 200 OK
-{
-  "message": "Logout successful"
-}
+{ "message": "Logout successful" }
 ```
 
 ---
 
-If you'd like, I can also add automated integration tests for these endpoints (using supertest/mocha or jest). 🔧
+## Captains
 
----
+Captain endpoints behave similarly to users but include vehicle metadata.
 
-# Captains — Register Endpoint ✅
+### Register — `POST /captains/register`
 
-## Endpoint
+Request body (JSON):
 
-**POST** `/captains/register`
+- `fullname`: object (`firstname` required, min 3)
+- `email`: string (required)
+- `password`: string (required, min 6)
+- `vehicle`: object with `color` (min 3), `plate` (min 3), `capacity` (int >=1), `vehicleType` (one of `"motorcycle"`, `"car"`, `"auto"`)
 
-> Note: The route is registered as `/register` in `captain.routes.js` and is typically mounted under a `captains` route group (e.g., `app.use('/captains', captainRoutes)`), resulting in `/captains/register`. Verify your route mounting in `server.js` or `app.js`.
-
----
-
-## Description
-
-Create a new captain account and return an authentication token (JWT).
-
----
-
-## Headers
-
-- `Content-Type: application/json`
-
----
-
-## Request Body (JSON)
-
-- `fullname` (object)
-  - `firstname` (string, **required**, min 3 chars)
-  - `lastname` (string, optional, min 3 chars)
-- `email` (string, **required**, valid email)
-- `password` (string, **required**, min 6 chars)
-- `vehicle` (object)
-  - `color` (string, **required**, min 3 chars)
-  - `plate` (string, **required**, min 3 chars)
-  - `capacity` (number, **required**, integer >= 1)
-  - `vehicleType` (string, **required**, one of `"motorcycle"`, `"car"`, `"auto"`)
-
-Example:
+Example success (201):
 
 ```json
-{
-  "fullname": { "firstname": "Jane", "lastname": "Doe" },
-  "email": "jane@example.com",
-  "password": "StrongPass123",
-  "vehicle": {
-    "color": "Blue",
-    "plate": "ABC-123",
-    "capacity": 4,
-    "vehicleType": "car"
-  }
-}
-```
-
----
-
-## Validation Rules & Responses
-
-- **201 Created** ✅ — Successful registration
-
-  - Response body: `{ "captain": { ...publicCaptainFields }, "token": "<jwt>" }`
-  - Note: Password should **not** be returned in the response. The model sets `password` with `select: false` but confirm in controllers that the password is not exposed.
-
-- **400 Bad Request** ⚠️ — Validation failed or captain already exists
-
-  - Validation failure response: `{ "errors": [ { "msg": "...", "param": "...", "location": "body" }, ... ] }`
-  - Duplicate captain (email) response: `{ "message": "Captain already exists" }`
-
-- **500 Internal Server Error** ❌ — Server/database error
-  - Response body: `{ "error": "Internal server error" }` (or similar)
-
----
-
-## Notes
-
-- A JWT is generated using `process.env.JWT_SECRET_KEY` — ensure this environment variable is set in your environment.
-- Validation is handled via `express-validator` in `captain.routes.js`.
-- The controller uses `captainModel.hashPassword` to hash the password before storing, and `captain.generateAuthToken()` to create a token.
-
----
-
-## Example cURL
-
-```bash
-curl -X POST http://localhost:3000/captains/register \
-  -H "Content-Type: application/json" \
-  -d '{ "fullname": { "firstname": "Jane", "lastname": "Doe" }, "email": "jane@example.com", "password": "StrongPass123", "vehicle": { "color": "Blue", "plate": "ABC-123", "capacity": 4, "vehicleType": "car" } }'
-```
-
----
-
-## Example Success Response
-
-```json
-HTTP/1.1 201 Created
 {
   "captain": {
     "_id": "64a...",
@@ -396,28 +125,83 @@ HTTP/1.1 201 Created
     "email": "jane@example.com",
     "socketId": null,
     "status": "inactive",
-    "vehicle": { "color": "Blue", "plate": "ABC-123", "capacity": 4, "vehicleType": "car" },
+    "vehicle": {
+      "color": "Blue",
+      "plate": "ABC-123",
+      "capacity": 4,
+      "vehicleType": "car"
+    },
     "location": { "lat": null, "lng": null }
   },
   "token": "<jwt-token>"
 }
 ```
 
-## Example Validation Error Response
+---
+
+### Login — `POST /captains/login`
+
+Request body:
 
 ```json
-HTTP/1.1 400 Bad Request
+{ "email": "jane@example.com", "password": "StrongPass123" }
+```
+
+On success the endpoint:
+
+- returns `{ "captain": {...}, "token": "<jwt>" }` in the response body
+- sets an HTTP cookie `token` with the JWT
+
+---
+
+### Profile — `GET /captains/profile`
+
+Requires authentication via either the `token` cookie or `Authorization: Bearer <jwt>` header.
+
+Example success response (200):
+
+```json
 {
-  "errors": [
-    { "msg": "Invalid email address", "param": "email", "location": "body" },
-    { "msg": "Firstname must be at least 3 characters long", "param": "fullname.firstname", "location": "body" }
-  ]
+  "captain": {
+    "_id": "64a...",
+    "fullname": { "firstname": "Jane", "lastname": "Doe" },
+    "email": "jane@example.com",
+    "socketId": null,
+    "status": "active",
+    "vehicle": {
+      "color": "Blue",
+      "plate": "ABC-123",
+      "capacity": 4,
+      "vehicleType": "car"
+    },
+    "location": { "lat": 37.7749, "lng": -122.4194 }
+  }
 }
+```
+
+> Note: Real `location` values depend on captain updates; the above is an example.
+
+---
+
+### Logout — `GET /captains/logout`
+
+Accepts token via `Authorization: Bearer <jwt>` or the `token` cookie. The endpoint blacklists the token and clears the cookie.
+
+Example success response (200):
+
+```json
+{ "message": "Logout successful" }
 ```
 
 ---
 
-## Login — Endpoint ✅
+If you'd like, I can:
+
+- add a small badge header and repo links
+- add automated tests for these endpoints (supertest + jest)
+- generate Postman collection or curl script snippets
+
+Tell me which of the above you'd like next and I'll continue.
 
 ### Endpoint
 
@@ -558,5 +342,3 @@ curl -X GET http://localhost:3000/captains/logout \
 ```
 
 ---
-
-If you'd like, I can also add automated integration tests for the captains endpoints (using supertest/jest) or expand docs for additional captain features (location updates, status toggles). 🔧
